@@ -1,38 +1,65 @@
-// app/paginxxa/page.tsx
+// app/categorias/electronica/page.tsx
+
+import { Suspense } from "react";
 import { getProducts } from "@/app/helpers/getProducts";
+import { Product } from "@/lib/products/schema";
+import Motos from "@/components/hero/motos";
 import HeroBanner from "@/components/hero/page";
 import { ProductGrid } from "@/components/product-grid";
-import { Suspense } from "react";
-import { Product } from '@/lib/products/schema';
-import Motos from "@/components/hero/motos";
 import ProductSkeletonGrid from "@/components/ProductSkeletonGrid";
+import PaginationControls from "@/components/ui/PaginationControls";
 
-
-async function ProductsSection() {
-  const rawProducts = await getProducts();
-  const products: Product[] = rawProducts.map((product: any) => ({
-  ...product,
-  tags: Array.isArray(product.tags) ? product.tags.join(', ') : product.tags,
-  status: Boolean(product.status), // ✅ Conversión explícita
-}))
-.filter((product: Product) => product.category?.toLowerCase() === "motos")
-    .slice(0, 20); // ← solo los primeros 20 productos
-
-  return <ProductGrid products={products} />;
+interface PageProps {
+  params?: Promise<{ [key: string]: string | string[] | undefined }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function PaginaPage() {
+async function ProductsSection({ page = "1" }: { page: string }) {
+  const rawProducts = await getProducts();
+
+  const filteredProducts: Product[] = rawProducts
+    .filter((product: any) => product.category === "motos")
+    .map((product: any) => ({
+      ...product,
+      tags: Array.isArray(product.tags) ? product.tags.join(', ') : product.tags,
+      status: Boolean(product.status),
+    }));
+
+  const currentPage = parseInt(page, 10) || 1;
+  const pageSize = 20;
+  const totalPages = Math.ceil(filteredProducts.length / pageSize);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   return (
     <>
-      <Motos/>
+      <ProductGrid products={paginatedProducts} />
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        basePath="/categorias/motos"
+      />
+    </>
+  );
+}
+
+export default async function PaginaPage({ searchParams }: PageProps) {
+    // Await searchParams antes de usarlo
+  const resolvedSearchParams = await searchParams;
+  const page = resolvedSearchParams?.page as string || "1";
+
+  return (
+    <>
+      <Motos />
       <div className="w-full bg-gray-200 min-h-screen">
-      <div className="w-full max-w-[1200px] mx-auto flex flex-col gap-4 p-4 md:p-8">
-      <Suspense fallback={<ProductSkeletonGrid />}>
-        <ProductsSection />
-      </Suspense>
+        <div className="w-full max-w-[1200px] mx-auto flex flex-col gap-4 p-4 md:p-8">
+          <Suspense fallback={<ProductSkeletonGrid />}>
+            <ProductsSection page={page} />
+          </Suspense>
         </div>
-        </div>
+      </div>
     </>
   );
 }
