@@ -1,4 +1,4 @@
-// app/categorias/electronica/page.tsx
+// app/categorias/alimentos/page.tsx
 
 import { Suspense } from "react";
 import { getProducts } from "@/app/helpers/getProducts";
@@ -9,8 +9,10 @@ import { ProductGrid } from "@/components/product-grid";
 import ProductSkeletonGrid from "@/components/ProductSkeletonGrid";
 import PaginationControls from "@/components/ui/PaginationControls";
 
-interface Props {
-  searchParams?: { page?: string };
+// Usar la interfaz correcta para Next.js 15
+interface PageProps {
+  params?: Promise<{ [key: string]: string | string[] | undefined }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 async function ProductsSection({ page = "1" }: { page: string }) {
@@ -44,9 +46,10 @@ async function ProductsSection({ page = "1" }: { page: string }) {
   );
 }
 
-export default async function PaginaPage(props: Props) {
-  const searchParams = await props.searchParams;
-  const page = searchParams?.page || "1";
+export default async function PaginaPage({ searchParams }: PageProps) {
+  // Await searchParams antes de usarlo
+  const resolvedSearchParams = await searchParams;
+  const page = resolvedSearchParams?.page as string || "1";
 
   return (
     <>
